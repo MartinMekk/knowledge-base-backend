@@ -5,6 +5,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/mattn/go-sqlite3"
 	"knowledge-base-backend/internal/db"
+	"knowledge-base-backend/internal/notes"
 	"knowledge-base-backend/internal/server"
 	"log"
 )
@@ -28,7 +29,9 @@ func main() {
 		log.Fatalf("Could not migrate DB: %v", err)
 	}
 
-	routing := server.NewRouter(database)
+	notesRepo := notes.NewRepository(database)
+
+	routing := server.NewRouter(notesRepo)
 
 	if err := routing.Run(":8080"); err != nil {
 		log.Fatalf("Failed to staret server: %v", err)

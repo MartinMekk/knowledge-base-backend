@@ -1,20 +1,17 @@
 package server
 
 import (
-	"database/sql"
 	"github.com/gin-gonic/gin"
-	"net/http"
+	"knowledge-base-backend/internal/notes"
 )
 
-func NewRouter(db *sql.DB) *gin.Engine {
+func NewRouter(notesRepo notes.Repository) *gin.Engine {
 	routing := gin.Default()
 
-	routing.GET("/", func(context *gin.Context) {
-		context.JSON(http.StatusOK, gin.H{"message": "Welcome to your knowledge Base!"})
-	})
+	h := NewHandler(notesRepo)
 
-	routing.GET("/notes", getNotesHandeler(db))
-	routing.POST("/notes", addNoteHandler(db))
+	routing.GET("/notes", h.GetNotesHandler)
+	routing.POST("/notes", h.AddNoteHandler)
 
 	return routing
 }
