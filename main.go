@@ -2,7 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
@@ -27,6 +31,21 @@ func main() {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
 	defer db.Close()
+
+	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
+	if err != nil {
+		log.Fatalf("Failed to create sqlite3 driver: %v", err)
+	}
+
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://migrations", "sqlite3", driver)
+	if err != nil {
+		log.Fatalf("Failed to create migrate instance: %v", err)
+	}
+
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
 
 	createTableQuery := `
 		CREATE TABLE IF NOT EXISTS notes (
