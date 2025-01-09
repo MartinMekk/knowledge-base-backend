@@ -2,13 +2,11 @@ package main
 
 import (
 	"database/sql"
-	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
+	db2 "knowledge-base-backend/internal/db"
 	"log"
 	"net/http"
 	"time"
@@ -25,37 +23,15 @@ var db *sql.DB
 func main() {
 	var err error
 
-	db, err = sql.Open("sqlite3", "./notes.db")
-
+	db, err = db2.OpenDatabase("./notes.db")
 	if err != nil {
-		log.Fatalf("Failed to connect to the database: %v", err)
+		log.Fatalf("Could not open DB: %v", err)
 	}
 	defer db.Close()
 
-	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
+	err = db2.RunMigrations(db, "file://migrations")
 	if err != nil {
-		log.Fatalf("Failed to create sqlite3 driver: %v", err)
-	}
-
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://migrations", "sqlite3", driver)
-	if err != nil {
-		log.Fatalf("Failed to create migrate instance: %v", err)
-	}
-
-	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		log.Fatalf("Failed to run migrations: %v", err)
-	}
-
-	createTableQuery := `
-		CREATE TABLE IF NOT EXISTS notes (
-			id TEXT PRIMARY KEY, -- UUID
-			text TEXT NOT NULL,
-			created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-	);`
-
-	if _, err := db.Exec(createTableQuery); err != nil {
-		log.Fatalf("Failed to create table: %v", err)
+		log.Fatalf("Could not migrate DB: %v", err)
 	}
 
 	routing := gin.Default()
