@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func TestUpdateNoteHandler(t *testing.T) {
+func TestHandler_UpdateNoteHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mockRepo := new(notes.MockNotesRepo)
