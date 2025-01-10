@@ -74,7 +74,7 @@ func TestUpdateNoteHandler(t *testing.T) {
 	})
 
 	t.Run("invalid JSON", func(t *testing.T) {
-		noteID := "1"
+		noteID := "2"
 		badBody := []byte(`{invalid}`)
 
 		w := makeRequest(noteID, badBody)
