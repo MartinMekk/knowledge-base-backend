@@ -29,7 +29,7 @@ func RunMigrations(db *sql.DB, migrationsPath string) error {
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://migrations", "sqlite3", driver)
+		migrationsPath, "sqlite3", driver)
 	if err != nil {
 		return fmt.Errorf("failed to create migrate instance: %w", err)
 	}

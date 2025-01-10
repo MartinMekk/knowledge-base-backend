@@ -17,13 +17,28 @@ type repository struct {
 	db *sql.DB
 }
 
-func (r *repository) UpdateNote(ctx context.Context, id string, newText string) (Note, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func NewRepository(db *sql.DB) Repository {
 	return &repository{db: db}
+}
+
+func (r *repository) UpdateNote(ctx context.Context, id string, newText string) (Note, error) {
+	note := Note{ID: id, Text: newText}
+
+	_, err := r.db.ExecContext(
+		ctx,
+		`UPDATE notes SET text = ? WHERE id = ?`,
+		newText, id,
+	)
+	if err != nil {
+		return Note{}, err
+	}
+
+	row := r.db.QueryRowContext(ctx, "SELECT created FROM notes WHERE id = ?", note.ID)
+	if err := row.Scan(&note.Created); err != nil {
+		return Note{}, err
+	}
+
+	return note, nil
 }
 
 func (r *repository) CreateNote(ctx context.Context, text string) (Note, error) {
