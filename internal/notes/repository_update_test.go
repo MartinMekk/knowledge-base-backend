@@ -39,3 +39,23 @@ func TestRepository_UpdateNote_Success(t *testing.T) {
 	require.Len(t, fetchedAll, 1)
 	require.Equal(t, updatedText, fetchedAll[0].Text, "Text in the DB should be updated")
 }
+
+func TestRepository_UpdateNote_NotFound(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+	require.NoError(t, err)
+	defer db.Close()
+
+	err = db2.RunMigrations(db, "file://../../migrations")
+	require.NoError(t, err)
+
+	repo := notes.NewRepository(db)
+
+	originalNote, err := repo.CreateNote(context.Background(), "Original text")
+	require.NoError(t, err)
+	require.NotEmpty(t, originalNote.ID)
+
+	updatedText := "Updated text"
+	_, err = repo.UpdateNote(context.Background(), "not an id", updatedText)
+	require.NotEmpty(t, err)
+	require.Equal(t, err, notes.ErrNoteNotFound)
+}

@@ -3,6 +3,7 @@ package notes
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"github.com/google/uuid"
 	"time"
 )
@@ -21,16 +22,23 @@ func NewRepository(db *sql.DB) Repository {
 	return &repository{db: db}
 }
 
+var ErrNoteNotFound = errors.New("note not found")
+
 func (r *repository) UpdateNote(ctx context.Context, id string, newText string) (Note, error) {
 	note := Note{ID: id, Text: newText}
 
-	_, err := r.db.ExecContext(
+	result, err := r.db.ExecContext(
 		ctx,
 		`UPDATE notes SET text = ? WHERE id = ?`,
 		newText, id,
 	)
+	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return Note{}, err
+	}
+
+	if rowsAffected == 0 {
+		return Note{}, ErrNoteNotFound
 	}
 
 	row := r.db.QueryRowContext(ctx, "SELECT created FROM notes WHERE id = ?", note.ID)
