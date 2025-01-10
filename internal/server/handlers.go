@@ -46,3 +46,26 @@ func (h *Handler) AddNoteHandler(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"id": createdNote.ID})
 }
+
+func (h *Handler) UpdateNoteHandler(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	id := c.Param("id")
+
+	var req struct {
+		Text string `json:"text"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	updatedNote, err := h.notesRepo.UpdateNote(ctx, id, req.Text)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"id": updatedNote.ID, "text": updatedNote.Text})
+}

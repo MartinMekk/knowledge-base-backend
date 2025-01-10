@@ -10,10 +10,16 @@ import (
 type Repository interface {
 	CreateNote(ctx context.Context, text string) (Note, error)
 	GetAllNotes(ctx context.Context) ([]Note, error)
+	UpdateNote(ctx context.Context, id string, newText string) (Note, error)
 }
 
 type repository struct {
 	db *sql.DB
+}
+
+func (r *repository) UpdateNote(ctx context.Context, id string, newText string) (Note, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func NewRepository(db *sql.DB) Repository {
