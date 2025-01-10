@@ -44,7 +44,7 @@ func (h *Handler) AddNoteHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"id": createdNote.ID})
+	c.JSON(http.StatusCreated, createdNote)
 }
 
 func (h *Handler) UpdateNoteHandler(c *gin.Context) {
@@ -67,5 +67,5 @@ func (h *Handler) UpdateNoteHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"id": updatedNote.ID, "text": updatedNote.Text})
+	c.JSON(http.StatusOK, updatedNote)
 }
