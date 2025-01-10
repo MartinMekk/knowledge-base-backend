@@ -12,17 +12,53 @@ type Repository interface {
 	CreateNote(ctx context.Context, text string) (Note, error)
 	GetAllNotes(ctx context.Context) ([]Note, error)
 	UpdateNote(ctx context.Context, id string, newText string) (Note, error)
+	CreateTag(ctx context.Context, text string) (Tag, error)
 }
 
 type repository struct {
 	db *sql.DB
 }
 
+var ErrNoteNotFound = errors.New("note not found")
+
 func NewRepository(db *sql.DB) Repository {
 	return &repository{db: db}
 }
 
-var ErrNoteNotFound = errors.New("note not found")
+func (r *repository) CreateTag(ctx context.Context, text string) (Tag, error) {
+	tag := Tag{ID: uuid.New().String(), Text: text}
+
+	_, err := r.db.ExecContext(
+		ctx,
+		`INSERT INTO tags (id, text) VALUES (?, ?)`,
+		tag.ID, tag.Text,
+	)
+	if err != nil {
+		return Tag{}, err
+	}
+
+	return tag, nil
+}
+
+func (r *repository) CreateNote(ctx context.Context, text string) (Note, error) {
+	note := Note{ID: uuid.New().String(), Text: text, Created: time.Now()}
+
+	_, err := r.db.ExecContext(
+		ctx,
+		`INSERT INTO notes (id, text) VALUES (?, ?)`,
+		note.ID, note.Text,
+	)
+	if err != nil {
+		return Note{}, err
+	}
+
+	row := r.db.QueryRowContext(ctx, "SELECT created FROM notes WHERE id = ?", note.ID)
+	if err := row.Scan(&note.Created); err != nil {
+		return Note{}, err
+	}
+
+	return note, nil
+}
 
 func (r *repository) UpdateNote(ctx context.Context, id string, newText string) (Note, error) {
 	note := Note{ID: id, Text: newText}
@@ -39,26 +75,6 @@ func (r *repository) UpdateNote(ctx context.Context, id string, newText string) 
 
 	if rowsAffected == 0 {
 		return Note{}, ErrNoteNotFound
-	}
-
-	row := r.db.QueryRowContext(ctx, "SELECT created FROM notes WHERE id = ?", note.ID)
-	if err := row.Scan(&note.Created); err != nil {
-		return Note{}, err
-	}
-
-	return note, nil
-}
-
-func (r *repository) CreateNote(ctx context.Context, text string) (Note, error) {
-	note := Note{ID: uuid.New().String(), Text: text, Created: time.Now()}
-
-	_, err := r.db.ExecContext(
-		ctx,
-		`INSERT INTO notes (id, text) VALUES (?, ?)`,
-		note.ID, note.Text,
-	)
-	if err != nil {
-		return Note{}, err
 	}
 
 	row := r.db.QueryRowContext(ctx, "SELECT created FROM notes WHERE id = ?", note.ID)
