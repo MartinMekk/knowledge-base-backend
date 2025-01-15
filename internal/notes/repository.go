@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/google/uuid"
+	"strings"
 	"time"
 )
 
@@ -13,6 +14,7 @@ type Repository interface {
 	GetAllNotes(ctx context.Context) ([]Note, error)
 	UpdateNote(ctx context.Context, id string, newText string) (Note, error)
 	CreateTag(ctx context.Context, text string) (Tag, error)
+	AddTagToNote(ctx context.Context, tagId string, noteId string) error
 }
 
 type repository struct {
@@ -23,6 +25,18 @@ var ErrNoteNotFound = errors.New("note not found")
 
 func NewRepository(db *sql.DB) Repository {
 	return &repository{db: db}
+}
+
+func (r *repository) AddTagToNote(ctx context.Context, tagId string, noteId string) error {
+	_, err := r.db.ExecContext(
+		ctx,
+		`INSERT INTO note_tags (tag_id, note_id) VALUES (?, ?)`,
+		tagId, noteId,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *repository) CreateTag(ctx context.Context, text string) (Tag, error) {
@@ -88,7 +102,13 @@ func (r *repository) UpdateNote(ctx context.Context, id string, newText string) 
 func (r *repository) GetAllNotes(ctx context.Context) ([]Note, error) {
 	rows, err := r.db.QueryContext(
 		ctx,
-		`SELECT id, text, created FROM notes order by created ASC`,
+		`
+		SELECT n.id AS note_id, n.text AS note_text, n.created AS note_created, GROUP_CONCAT(t.text, ',') AS tags
+		FROM notes n
+		LEFT JOIN note_tags nt ON n.id = nt.note_id
+		LEFT JOIN tags t ON nt.tag_id = t.id
+		GROUP BY n.id
+		`,
 	)
 	if err != nil {
 		return nil, err
@@ -98,9 +118,11 @@ func (r *repository) GetAllNotes(ctx context.Context) ([]Note, error) {
 	var notes []Note
 	for rows.Next() {
 		var note Note
-		if err := rows.Scan(&note.ID, &note.Text, &note.Created); err != nil {
+		var tags string
+		if err := rows.Scan(&note.ID, &note.Text, &note.Created, &tags); err != nil {
 			return nil, err
 		}
+		note.Tags = strings.Split(tags, ",")
 		notes = append(notes, note)
 	}
 

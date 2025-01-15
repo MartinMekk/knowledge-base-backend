@@ -26,3 +26,29 @@ func TestRepository_CreateTag(t *testing.T) {
 		require.Equal(t, "Tag text", newTag.Text)
 	})
 }
+
+func TestMockNotesRepo_AddTagToNote(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+	require.NoError(t, err)
+	defer db.Close()
+
+	err = db2.RunMigrations(db, "file://../../migrations")
+	require.NoError(t, err)
+
+	repo := notes.NewRepository(db)
+
+	t.Run("success", func(t *testing.T) {
+		newTag, err := repo.CreateTag(context.Background(), "Tag text")
+		require.NoError(t, err)
+		note, err := repo.CreateNote(context.Background(), "Note text")
+		require.NoError(t, err)
+
+		err = repo.AddTagToNote(context.Background(), newTag.ID, note.ID)
+		require.NoError(t, err)
+
+		allNotes, err := repo.GetAllNotes(context.Background())
+		require.NoError(t, err)
+
+		require.Equal(t, newTag.Text, allNotes[0].Tags[0])
+	})
+}
