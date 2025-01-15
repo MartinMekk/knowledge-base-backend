@@ -32,8 +32,24 @@ func TestRepository_CreateNote(t *testing.T) {
 		require.Len(t, fetchedAll, 1)
 		require.Equal(t, "Note text", fetchedAll[0].Text, "Text in the DB should be updated")
 	})
+}
 
-	t.Run("create note with tags", func(t *testing.T) {
+func TestNewRepository_CreateNoteWithTags(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+	require.NoError(t, err)
+	defer db.Close()
 
+	err = db2.RunMigrations(db, "file://../../migrations")
+	require.NoError(t, err)
+
+	repo := notes.NewRepository(db)
+
+	t.Run("success", func(t *testing.T) {
+		note, err := repo.CreateNoteWithTags(context.Background(), "Note text", []string{"Tag one", "Tag two"})
+		require.NoError(t, err)
+		require.NotEmpty(t, note.ID)
+
+		require.Equal(t, note.Text, "Note text")
+		require.Equal(t, note.Tags, []string{"Tag one", "Tag two"})
 	})
 }

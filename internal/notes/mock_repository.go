@@ -9,12 +9,19 @@ type MockNotesRepo struct {
 	mock.Mock
 }
 
+func (m *MockNotesRepo) CreateNoteWithTags(ctx context.Context, text string, tags []string) (Note, error) {
+	args := m.Called(ctx, text, tags)
+
+	return args.Get(0).(Note), args.Error(1)
+}
+
 func (m *MockNotesRepo) CreateTag(ctx context.Context, text string) (Tag, error) {
 	args := m.Called(ctx, text)
 	return args.Get(0).(Tag), args.Error(1)
 }
 
 func (m *MockNotesRepo) AddTagToNote(ctx context.Context, tagId string, noteId string) error {
+	m.Called(ctx, tagId, noteId)
 	return nil
 }
 

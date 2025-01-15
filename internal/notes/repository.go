@@ -15,10 +15,29 @@ type Repository interface {
 	UpdateNote(ctx context.Context, id string, newText string) (Note, error)
 	CreateTag(ctx context.Context, text string) (Tag, error)
 	AddTagToNote(ctx context.Context, tagId string, noteId string) error
+	CreateNoteWithTags(ctx context.Context, text string, tags []string) (Note, error)
 }
 
 type repository struct {
 	db *sql.DB
+}
+
+func (r *repository) CreateNoteWithTags(ctx context.Context, text string, tags []string) (Note, error) {
+	note, err := r.CreateNote(ctx, text)
+	if err != nil {
+		return Note{}, err
+	}
+	for _, tag := range tags {
+		tag, err := r.CreateTag(ctx, tag)
+		if err != nil {
+			return Note{}, err
+		}
+		if err = r.AddTagToNote(ctx, tag.ID, note.ID); err != nil {
+			return Note{}, err
+		}
+		note.Tags = append(note.Tags, tag.Text)
+	}
+	return note, nil
 }
 
 var ErrNoteNotFound = errors.New("note not found")
