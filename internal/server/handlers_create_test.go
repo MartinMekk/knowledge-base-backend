@@ -36,7 +36,10 @@ func TestHandler_AddNoteHandler(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		requestBody := []byte(`{"text":"Note text"}`)
 
-		mockRepo.On("CreateNote", mock.Anything, "Note text").Return(notes.Note{ID: "1", Text: "Note text", Created: time.Now()}, nil).Once()
+		mockRepo.
+			On("CreateNote", mock.Anything, "Note text").
+			Return(notes.Note{ID: "1", Text: "Note text", Created: time.Now()}, nil).
+			Once()
 
 		w := makeRequest(requestBody)
 		require.Equal(t, http.StatusCreated, w.Code)
@@ -52,6 +55,7 @@ func TestHandler_AddNoteHandler(t *testing.T) {
 	})
 
 	t.Run("invalid JSON", func(t *testing.T) {
+		mockRepo = new(notes.MockNotesRepo)
 		badBody := []byte(`{invalid}`)
 
 		w := makeRequest(badBody)

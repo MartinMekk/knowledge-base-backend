@@ -118,11 +118,13 @@ func (r *repository) GetAllNotes(ctx context.Context) ([]Note, error) {
 	var notes []Note
 	for rows.Next() {
 		var note Note
-		var tags string
+		var tags *string
 		if err := rows.Scan(&note.ID, &note.Text, &note.Created, &tags); err != nil {
 			return nil, err
 		}
-		note.Tags = strings.Split(tags, ",")
+		if tags != nil {
+			note.Tags = strings.Split(*tags, ",")
+		}
 		notes = append(notes, note)
 	}
 

@@ -32,4 +32,8 @@ func TestRepository_CreateNote(t *testing.T) {
 		require.Len(t, fetchedAll, 1)
 		require.Equal(t, "Note text", fetchedAll[0].Text, "Text in the DB should be updated")
 	})
+
+	t.Run("create note with tags", func(t *testing.T) {
+
+	})
 }
